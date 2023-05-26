@@ -1,0 +1,71 @@
+import { LightningElement } from 'lwc';
+const BOOK_URL = 'https://www.googleapis.com/books/v1/volumes?q='
+export default class BookApp extends LightningElement {
+    query='Man'
+    books=[]
+    timer
+    connectedCallback(){
+        this.fetchBookData()
+    }
+ 
+    fetchBookData(){
+        fetch(BOOK_URL+this.query)
+        .then(response=>response.json())
+        .then(data=>{
+        
+            this.books =  data ? this.formatData(data) :[]
+             console.log("this.books",  this.books )
+        })
+        
+        .catch(error=>console.error(error))
+    }
+    fetchBooksHandler(event){
+        this.query = event.target.value
+        window.clearTimeout(this.timer)
+        this.timer= setTimeout(()=>{
+            this.fetchBookData()
+        }, 1000)
+    }
+    formatData(data){
+        console.log(data)
+        let books =  data.items.map(item=>{
+            let id = item.id
+            let thumbnail = item.volumeInfo.imageLinks && (item.volumeInfo.imageLinks.smallThumbnail || item.volumeInfo.imageLinks.thumbnail)
+            let title = item.volumeInfo.title
+            let publishedDate = item.volumeInfo.publishedDate
+            let averageRating = item.volumeInfo.averageRating ||'NA'
+            return {id, thumbnail, title, publishedDate, averageRating}
+    
+        })
+        return books
+    }
+}
+
+HTML
+
+<template>
+    <lightning-card>
+        <div class="slds-p-around_medium">
+            <div class="slds-p-around_medium">
+                <lightning-input type="search"
+                onchange={fetchBooksHandler}
+                label="Search Books"
+                value={query}></lightning-input>
+            </div>
+            <lightning-layout multiple-rows>
+                <template if:true={books}>
+                    <template for:each={books} for:item="book">
+                        <lightning-layout-item size="3" padding="around-small" key={book.id}>
+                           <div class="slds-box slds-p-around_medium slds-text-align_center">
+                               <img src={book.thumbnail} height="200px"/>
+                               <div class="slds-text-heading_small slds-p-vertical_medium"><strong>{book.title}</strong></div>
+                               <div><strong>Published Date -</strong>{book.publishedDate}</div>
+                               <div><strong>Average Rating - {book.averageRating}</strong></div>
+                           </div>
+                        </lightning-layout-item>
+                    </template>
+                </template>
+            </lightning-layout>
+        </div>
+    </lightning-card>
+</template>
